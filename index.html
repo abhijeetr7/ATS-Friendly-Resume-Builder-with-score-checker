@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline Resume Builder</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- html2canvas for PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- jsPDF for PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- qrious for QR code generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* Light gray background */
+        }
+        /* Custom scrollbar for better aesthetics */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #e0e0e0;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        /* Styling for the resume preview */
+        #resume-preview {
+            background-color: white;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            padding: 2.5rem; /* Increased padding for better look */
+            min-height: 297mm; /* A4 height */
+            width: 210mm; /* A4 width */
+            margin: 0 auto;
+            color: #333;
+            line-height: 1.6;
+        }
+        #resume-preview h1, #resume-preview h2, #resume-preview h3 {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #1a202c; /* Darker heading color */
+        }
+        #resume-preview h1 {
+            font-size: 2.25rem; /* text-4xl */
+            text-align: center;
+            margin-bottom: 1rem;
+            color: #2c5282; /* Blue for name */
+        }
+        #resume-preview h2 {
+            font-size: 1.5rem; /* text-2xl */
+            border-bottom: 2px solid #edf2f7; /* Light border */
+            padding-bottom: 0.5rem;
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        #resume-preview h3 {
+            font-size: 1.125rem; /* text-lg */
+            margin-bottom: 0.25rem;
+        }
+        #resume-preview p {
+            margin-bottom: 0.5rem;
+        }
+        #resume-preview ul {
+            list-style-type: disc;
+            margin-left: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+        #resume-preview ul li {
+            margin-bottom: 0.25rem;
+        }
+        .contact-info p {
+            display: inline-block;
+            margin-right: 1.5rem;
+        }
+        .form-input {
+            @apply block w-full px-4 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm;
+        }
+        .form-label {
+            @apply block text-sm font-medium text-gray-700 mt-4;
+        }
+        .btn-primary {
+            @apply px-5 py-2 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out shadow-lg;
+        }
+        .btn-secondary {
+            @apply px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out;
+        }
+        .ats-score-display {
+            @apply text-3xl font-bold text-center mt-4 mb-2;
+        }
+        .ats-feedback-message {
+            @apply text-sm text-gray-700 mb-2;
+        }
+    </style>
+</head>
+<body class="p-8">
+    <div class="max-w-7xl mx-auto bg-white rounded-xl shadow-2xl overflow-hidden p-8">
+        <h1 class="text-4xl font-bold text-center text-blue-700 mb-8">Offline Resume Builder</h1>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+            <!-- Left Column: Form -->
+            <div class="p-6 bg-gray-50 rounded-lg shadow-inner">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-6">Your Details</h2>
+
+                <!-- About Section -->
+                <section class="mb-8 p-4 border border-gray-200 rounded-lg bg-white shadow-sm">
+                    <h3 class="text-xl font-medium text-gray-900 mb-4">About You</h3>
+                    <div>
+                        <label for="name" class="form-label">Full Name</label>
+                        <input type="text" id="name" class="form-input" placeholder="John Doe">
+                    </div>
+                    <div>
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" id="email" class="form-input" placeholder="john.doe@example.com">
+                    </div>
+                    <div>
+                        <label for="phone" class="form-label">Phone</label>
+                        <input type="tel" id="phone" class="form-input" placeholder="+1234567890">
+                    </div>
+                    <div>
+                        <label for="linkedin" class="form-label">LinkedIn Profile (URL)</label>
+                        <input type="url" id="linkedin" class="form-input" placeholder="https://linkedin.com/in/johndoe">
+                    </div>
+                    <div>
+                        <label for="summary" class="form-label">Professional Summary</label>
+                        <textarea id="summary" class="form-input h-32 resize-y" placeholder="A brief overview of your skills and experience."></textarea>
+                    </div>
+                </section>
+
+                <!-- Education Section -->
+                <section class="mb-8 p-4 border border-gray-200 rounded-lg bg-white shadow-sm">
+                    <h3 class="text-xl font-medium text-gray-900 mb-4 flex justify-between items-center">
+                        Education
+                        <button id="add-education" class="btn-secondary text-sm">+ Add Education</button>
+                    </h3>
+                    <div id="education-container">
+                        <!-- Education entries will be added here -->
+                        <div class="education-entry mb-4 p-4 border border-gray-100 rounded-md bg-gray-50 shadow-sm relative">
+                            <button class="remove-entry absolute top-2 right-2 text-red-500 hover:text-red-700 focus:outline-none text-2xl leading-none">&times;</button>
+                            <div>
+                                <label class="form-label">School/University</label>
+                                <input type="text" class="form-input school" placeholder="University Name">
+                            </div>
+                            <div>
+                                <label class="form-label">Degree/Major</label>
+                                <input type="text" class="form-input degree" placeholder="Degree, e.g., B.S. Computer Science">
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="form-label">Start Date</label>
+                                    <input type="month" class="form-input edu-start-date">
+                                </div>
+                                <div>
+                                    <label class="form-label">End Date (or Expected)</label>
+                                    <input type="month" class="form-input edu-end-date">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="form-label">Description (optional)</label>
+                                <textarea class="form-input edu-description h-20 resize-y" placeholder="Relevant coursework, achievements, GPA."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Experience Section -->
+                <section class="mb-8 p-4 border border-gray-200 rounded-lg bg-white shadow-sm">
+                    <h3 class="text-xl font-medium text-gray-900 mb-4 flex justify-between items-center">
+                        Experience
+                        <button id="add-experience" class="btn-secondary text-sm">+ Add Experience</button>
+                    </h3>
+                    <div id="experience-container">
+                        <!-- Experience entries will be added here -->
+                        <div class="experience-entry mb-4 p-4 border border-gray-100 rounded-md bg-gray-50 shadow-sm relative">
+                            <button class="remove-entry absolute top-2 right-2 text-red-500 hover:text-red-700 focus:outline-none text-2xl leading-none">&times;</button>
+                            <div>
+                                <label class="form-label">Job Title</label>
+                                <input type="text" class="form-input job-title" placeholder="Software Engineer">
+                            </div>
+                            <div>
+                                <label class="form-label">Company</label>
+                                <input type="text" class="form-input company" placeholder="Tech Innovations Inc.">
+                            </div>
+                            <div>
+                                <label class="form-label">Location</label>
+                                <input type="text" class="form-input location" placeholder="San Francisco, CA">
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="form-label">Start Date</label>
+                                    <input type="month" class="form-input exp-start-date">
+                                </div>
+                                <div>
+                                    <label class="form-label">End Date (or Present)</label>
+                                    <input type="month" class="form-input exp-end-date">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="form-label">Responsibilities/Achievements (comma-separated or bullet points)</label>
+                                <textarea class="form-input responsibilities h-28 resize-y" placeholder="Developed and maintained web applications. Led a team of 3 developers. Achieved 15% performance improvement."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ATS Score Checker Section -->
+                <section class="mb-8 p-4 border border-gray-200 rounded-lg bg-white shadow-sm">
+                    <h3 class="text-xl font-medium text-gray-900 mb-4">ATS Score Checker</h3>
+                    <p class="text-sm text-gray-600 mb-4">
+                        Paste the job description or a list of keywords below to see how well your resume matches.
+                        ATS friendly resumes generally use clear headings, standard formats, and relevant keywords.
+                    </p>
+                    <div>
+                        <label for="job-description-input" class="form-label">Job Description / Keywords</label>
+                        <textarea id="job-description-input" class="form-input h-40 resize-y" placeholder="E.g., 'Software Engineer, Python, AWS, Machine Learning, Data Analysis, SQL, Agile'"></textarea>
+                    </div>
+                    <div class="mt-4 text-center">
+                        <p class="text-lg font-semibold text-gray-800">ATS Score: <span id="ats-score" class="ats-score-display text-blue-600">--</span>/100</p>
+                        <div id="ats-feedback" class="text-left mt-2">
+                            <!-- Feedback messages will appear here -->
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Action Buttons -->
+                <div class="flex justify-center gap-4 mt-8">
+                    <button id="export-pdf" class="btn-primary">Export as PDF</button>
+                    <button id="generate-qr" class="btn-primary">Generate QR Code</button>
+                </div>
+                <div class="flex justify-center mt-6">
+                    <div id="qr-code-container" class="p-4 bg-white rounded-lg shadow-md hidden">
+                        <canvas id="qr-canvas" class="w-48 h-48"></canvas>
+                        <p class="text-center text-sm text-gray-600 mt-2">Scan to view resume data (JSON).</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Resume Preview -->
+            <div class="p-6 bg-white rounded-lg shadow-lg overflow-y-auto max-h-[calc(100vh-100px)]">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-6">Live Resume Preview</h2>
+                <div id="resume-preview" class="border border-gray-300 rounded-md">
+                    <!-- Resume content will be rendered here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variable for jsPDF to avoid re-initializing
+        let pdf = null;
+
+        // Function to safely access window.jsPDF
+        function getJsPDF() {
+            if (window.jspdf && window.jspdf.jsPDF) {
+                return new window.jspdf.jsPDF('p', 'mm', 'a4');
+            } else if (window.jsPDF) { // Fallback for older UMD versions or different imports
+                return new window.jsPDF('p', 'mm', 'a4');
+            }
+            console.error("jsPDF library not found or not initialized correctly.");
+            return null;
+        }
+
+        // Helper to format date for display
+        function formatDate(dateString) {
+            if (!dateString) return 'Present';
+            const [year, month] = dateString.split('-');
+            const date = new Date(year, month - 1);
+            return new Intl.DateTimeFormat('en-US', { month: 'short', year: 'numeric' }).format(date);
+        }
+
+        // Function to extract clean text from an element for ATS analysis
+        function getCleanText(elementId) {
+            const element = document.getElementById(elementId);
+            if (!element) return '';
+            // Clone the element to avoid modifying the live DOM
+            const clone = element.cloneNode(true);
+            // Remove scripts and styles
+            clone.querySelectorAll('script, style').forEach(el => el.remove());
+            // Get text content, convert to lowercase, and remove excessive whitespace/line breaks
+            return clone.textContent.toLowerCase().replace(/\s+/g, ' ').trim();
+        }
+
+        // Function to calculate ATS score
+        function calculateAtsScore() {
+            const resumeText = getCleanText('resume-preview');
+            const jobDescriptionInput = document.getElementById('job-description-input').value;
+            const atsScoreElement = document.getElementById('ats-score');
+            const atsFeedbackElement = document.getElementById('ats-feedback');
+            let score = 0;
+            const feedback = [];
+
+            // Normalize job description keywords
+            const jobKeywords = jobDescriptionInput
+                                .toLowerCase()
+                                .split(/[\s,.;:!\?\(\)\[\]\{\}]+/) // Split by common delimiters
+                                .filter(word => word.length > 2 && !['and', 'the', 'for', 'a', 'an', 'to', 'in', 'of', 'with'].includes(word)) // Filter short common words
+                                .filter((value, index, self) => self.indexOf(value) === index); // Get unique keywords
+
+            // Base score for having a resume
+            score += 20;
+
+            // Check for core sections
+            const hasSummary = !!document.getElementById('summary').value.trim();
+            const hasEducation = Array.from(document.querySelectorAll('.education-entry')).some(e => e.querySelector('.school').value.trim() || e.querySelector('.degree').value.trim());
+            const hasExperience = Array.from(document.querySelectorAll('.experience-entry')).some(e => e.querySelector('.job-title').value.trim() || e.querySelector('.company').value.trim());
+
+            if (hasSummary) {
+                score += 10;
+                feedback.push('<p class="ats-feedback-message text-green-700">&#10003; Professional Summary present.</p>');
+            } else {
+                feedback.push('<p class="ats-feedback-message text-red-700">&#10006; Consider adding a Professional Summary.</p>');
+            }
+
+            if (hasEducation) {
+                score += 10;
+                feedback.push('<p class="ats-feedback-message text-green-700">&#10003; Education section present.</p>');
+            } else {
+                feedback.push('<p class="ats-feedback-message text-red-700">&#10006; Education section is missing or empty.</p>');
+            }
+
+            if (hasExperience) {
+                score += 15;
+                feedback.push('<p class="ats-feedback-message text-green-700">&#10003; Experience section present.</p>');
+            } else {
+                feedback.push('<p class="ats-feedback-message text-red-700">&#10006; Experience section is missing or empty.</p>');
+            }
+
+            // Keyword Matching
+            let matchedKeywords = new Set();
+            if (jobKeywords.length > 0) {
+                jobKeywords.forEach(keyword => {
+                    const regex = new RegExp(`\\b${keyword}\\b`, 'gi'); // Whole word match, case insensitive
+                    if (resumeText.match(regex)) {
+                        matchedKeywords.add(keyword);
+                    }
+                });
+
+                const keywordMatchScore = (matchedKeywords.size / jobKeywords.length) * 30; // Max 30 points for keywords
+                score += keywordMatchScore;
+                feedback.push(`<p class="ats-feedback-message text-gray-700">&#x2B50; Keyword Match: ${matchedKeywords.size} of ${jobKeywords.length} unique keywords matched.</p>`);
+                if (matchedKeywords.size < jobKeywords.length) {
+                    const missingKeywords = jobKeywords.filter(k => !matchedKeywords.has(k));
+                    feedback.push(`<p class="ats-feedback-message text-orange-700">&#9888; Missing Keywords: ${missingKeywords.slice(0, 5).join(', ')}${missingKeywords.length > 5 ? '...' : ''}. Consider integrating them.</p>`);
+                }
+            } else {
+                feedback.push('<p class="ats-feedback-message text-gray-700">&#x2139; Enter job description or keywords to get keyword match feedback.</p>');
+            }
+
+            // Bullet point usage in experience
+            const experienceResponsibilities = Array.from(document.querySelectorAll('.experience-entry .responsibilities')).map(el => el.value);
+            let bulletPointCount = 0;
+            experienceResponsibilities.forEach(text => {
+                const lines = text.split('\n').filter(line => line.trim().length > 0);
+                bulletPointCount += lines.length;
+            });
+
+            if (bulletPointCount > 5) { // Arbitrary threshold for good bullet point usage
+                score += 5;
+                feedback.push('<p class="ats-feedback-message text-green-700">&#10003; Good use of bullet points in Experience section.</p>');
+            } else {
+                feedback.push('<p class="ats-feedback-message text-orange-700">&#9888; Use more bullet points in your Experience section for readability and ATS parsing.</p>');
+            }
+
+            // Check resume length (very basic)
+            const wordCount = resumeText.split(/\s+/).filter(word => word.length > 0).length;
+            if (wordCount > 150 && wordCount < 800) { // Typical range for 1-2 page resume
+                score += 5;
+                feedback.push('<p class="ats-feedback-message text-green-700">&#10003; Resume length appears appropriate.</p>');
+            } else {
+                feedback.push('<p class="ats-feedback-message text-orange-700">&#9888; Resume length might be too short or too long. Aim for concise, relevant content.</p>');
+            }
+
+
+            // Cap score at 100
+            score = Math.min(Math.round(score), 100);
+
+            atsScoreElement.textContent = score;
+            atsFeedbackElement.innerHTML = feedback.join('');
+        }
+
+
+        // Function to update the resume preview
+        function updatePreview() {
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const phone = document.getElementById('phone').value;
+            const linkedin = document.getElementById('linkedin').value;
+            const summary = document.getElementById('summary').value;
+
+            const educationEntries = Array.from(document.querySelectorAll('.education-entry')).map(entry => {
+                return {
+                    school: entry.querySelector('.school').value,
+                    degree: entry.querySelector('.degree').value,
+                    startDate: entry.querySelector('.edu-start-date').value,
+                    endDate: entry.querySelector('.edu-end-date').value,
+                    description: entry.querySelector('.edu-description').value,
+                };
+            });
+
+            const experienceEntries = Array.from(document.querySelectorAll('.experience-entry')).map(entry => {
+                return {
+                    jobTitle: entry.querySelector('.job-title').value,
+                    company: entry.querySelector('.company').value,
+                    location: entry.querySelector('.location').value,
+                    startDate: entry.querySelector('.exp-start-date').value,
+                    endDate: entry.querySelector('.exp-end-date').value,
+                    responsibilities: entry.querySelector('.responsibilities').value,
+                };
+            });
+
+            let previewHtml = `
+                <h1 class="font-bold text-4xl mb-4 text-blue-700">${name || 'Your Name'}</h1>
+                <div class="contact-info text-center text-gray-700 mb-6">
+                    ${email ? `<p>${email}</p>` : ''}
+                    ${phone ? `<p>${phone}</p>` : ''}
+                    ${linkedin ? `<p><a href="${linkedin}" target="_blank" class="text-blue-600 hover:underline">${linkedin.replace(/^(https?:\/\/)?(www\.)?/,'')}</a></p>` : ''}
+                </div>
+            `;
+
+            if (summary.trim()) {
+                previewHtml += `
+                    <h2 class="text-2xl font-semibold border-b-2 pb-2 mb-4">Summary</h2>
+                    <p class="mb-4">${summary}</p>
+                `;
+            }
+
+            if (educationEntries.some(edu => edu.school.trim() || edu.degree.trim())) {
+                previewHtml += `
+                    <h2 class="text-2xl font-semibold border-b-2 pb-2 mb-4">Education</h2>
+                    ${educationEntries.map(edu => `
+                        <div class="mb-4">
+                            <h3 class="font-bold text-lg">${edu.degree || 'Degree'}</h3>
+                            <p class="text-gray-800">${edu.school || 'School/University'}</p>
+                            <p class="text-gray-600">${formatDate(edu.startDate)} - ${formatDate(edu.endDate)}</p>
+                            ${edu.description.trim() ? `<p class="text-gray-700">${edu.description}</p>` : ''}
+                        </div>
+                    `).join('')}
+                `;
+            }
+
+            if (experienceEntries.some(exp => exp.jobTitle.trim() || exp.company.trim())) {
+                previewHtml += `
+                    <h2 class="text-2xl font-semibold border-b-2 pb-2 mb-4">Experience</h2>
+                    ${experienceEntries.map(exp => `
+                        <div class="mb-4">
+                            <h3 class="font-bold text-lg">${exp.jobTitle || 'Job Title'}</h3>
+                            <p class="text-gray-800">${exp.company || 'Company'}${exp.location.trim() ? `, ${exp.location}` : ''}</p>
+                            <p class="text-gray-600">${formatDate(exp.startDate)} - ${formatDate(exp.endDate)}</p>
+                            ${exp.responsibilities.trim() ? `
+                                <ul class="list-disc pl-5 mt-2 text-gray-700">
+                                    ${exp.responsibilities.split('\n').filter(Boolean).map(item => `<li>${item.trim()}</li>`).join('')}
+                                </ul>
+                            ` : ''}
+                        </div>
+                    `).join('')}
+                `;
+            }
+
+            document.getElementById('resume-preview').innerHTML = previewHtml;
+            calculateAtsScore(); // Call ATS score calculation after updating preview
+        }
+
+        // Function to add a new education entry
+        function addEducationEntry() {
+            const container = document.getElementById('education-container');
+            const newEntry = document.createElement('div');
+            newEntry.className = 'education-entry mb-4 p-4 border border-gray-100 rounded-md bg-gray-50 shadow-sm relative';
+            newEntry.innerHTML = `
+                <button class="remove-entry absolute top-2 right-2 text-red-500 hover:text-red-700 focus:outline-none text-2xl leading-none">&times;</button>
+                <div>
+                    <label class="form-label">School/University</label>
+                    <input type="text" class="form-input school" placeholder="University Name">
+                </div>
+                <div>
+                    <label class="form-label">Degree/Major</label>
+                    <input type="text" class="form-input degree" placeholder="Degree, e.g., B.S. Computer Science">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="form-label">Start Date</label>
+                        <input type="month" class="form-input edu-start-date">
+                    </div>
+                    <div>
+                        <label class="form-label">End Date (or Expected)</label>
+                        <input type="month" class="form-input edu-end-date">
+                    </div>
+                </div>
+                <div>
+                    <label class="form-label">Description (optional)</label>
+                    <textarea class="form-input edu-description h-20 resize-y" placeholder="Relevant coursework, achievements, GPA."></textarea>
+                </div>
+            `;
+            container.appendChild(newEntry);
+            addRemoveEntryListeners(); // Re-attach listeners for new buttons
+            newEntry.querySelectorAll('input, textarea').forEach(input => input.addEventListener('input', updatePreview));
+            updatePreview();
+        }
+
+        // Function to add a new experience entry
+        function addExperienceEntry() {
+            const container = document.getElementById('experience-container');
+            const newEntry = document.createElement('div');
+            newEntry.className = 'experience-entry mb-4 p-4 border border-gray-100 rounded-md bg-gray-50 shadow-sm relative';
+            newEntry.innerHTML = `
+                <button class="remove-entry absolute top-2 right-2 text-red-500 hover:text-red-700 focus:outline-none text-2xl leading-none">&times;</button>
+                <div>
+                    <label class="form-label">Job Title</label>
+                    <input type="text" class="form-input job-title" placeholder="Software Engineer">
+                </div>
+                <div>
+                    <label class="form-label">Company</label>
+                    <input type="text" class="form-input company" placeholder="Tech Innovations Inc.">
+                </div>
+                <div>
+                    <label class="form-label">Location</label>
+                    <input type="text" class="form-input location" placeholder="San Francisco, CA">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="form-label">Start Date</label>
+                        <input type="month" class="form-input exp-start-date">
+                    </div>
+                    <div>
+                        <label class="form-label">End Date (or Present)</label>
+                        <input type="month" class="form-input exp-end-date">
+                    </div>
+                </div>
+                <div>
+                    <label class="form-label">Responsibilities/Achievements (comma-separated or bullet points)</label>
+                    <textarea class="form-input responsibilities h-28 resize-y" placeholder="Developed and maintained web applications. Led a team of 3 developers. Achieved 15% performance improvement."></textarea>
+                </div>
+            `;
+            container.appendChild(newEntry);
+            addRemoveEntryListeners(); // Re-attach listeners for new buttons
+            newEntry.querySelectorAll('input, textarea').forEach(input => input.addEventListener('input', updatePreview));
+            updatePreview();
+        }
+
+        // Function to attach remove listeners to all remove buttons
+        function addRemoveEntryListeners() {
+            document.querySelectorAll('.remove-entry').forEach(button => {
+                button.onclick = function() {
+                    this.closest('.education-entry, .experience-entry').remove();
+                    updatePreview();
+                };
+            });
+        }
+
+        // Function to export resume as PDF
+        async function exportPdf() {
+            const resumePreview = document.getElementById('resume-preview');
+            // Temporarily adjust styles for better PDF rendering
+            resumePreview.style.padding = '20mm'; // Standard A4 margins
+            resumePreview.style.width = '210mm'; // A4 width
+            resumePreview.style.boxShadow = 'none'; // Remove shadow for PDF
+
+            // Use window.html2canvas to ensure correct scope
+            const canvas = await html2canvas(resumePreview, {
+                scale: 2, // Improve quality for PDF
+                useCORS: true // Important for external images if any, though none are used here
+            });
+
+            // Restore original styles
+            resumePreview.style.padding = '2.5rem';
+            resumePreview.style.width = '210mm'; /* Keep A4 width for consistency */
+            resumePreview.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
+
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = getJsPDF();
+
+            if (!pdf) return;
+
+            const imgWidth = 210; // A4 width in mm
+            const pageHeight = 297; // A4 height in mm
+            const imgHeight = canvas.height * imgWidth / canvas.width;
+            let heightLeft = imgHeight;
+            let position = 0;
+
+            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+            heightLeft -= pageHeight;
+
+            while (heightLeft >= 0) {
+                position = heightLeft - imgHeight;
+                pdf.addPage();
+                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+            }
+
+            pdf.save('resume.pdf');
+        }
+
+        // Function to generate QR code
+        function generateQrCode() {
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const phone = document.getElementById('phone').value;
+            const linkedin = document.getElementById('linkedin').value;
+            const summary = document.getElementById('summary').value;
+
+            const education = Array.from(document.querySelectorAll('.education-entry')).map(entry => ({
+                school: entry.querySelector('.school').value,
+                degree: entry.querySelector('.degree').value,
+                startDate: entry.querySelector('.edu-start-date').value,
+                endDate: entry.querySelector('.edu-end-date').value,
+                description: entry.querySelector('.edu-description').value,
+            }));
+
+            const experience = Array.from(document.querySelectorAll('.experience-entry')).map(entry => ({
+                jobTitle: entry.querySelector('.job-title').value,
+                company: entry.querySelector('.company').value,
+                location: entry.querySelector('.location').value,
+                startDate: entry.querySelector('.exp-start-date').value,
+                endDate: entry.querySelector('.exp-end-date').value,
+                responsibilities: entry.querySelector('.responsibilities').value,
+            }));
+
+            const resumeData = {
+                name,
+                email,
+                phone,
+                linkedin,
+                summary,
+                education: education.filter(edu => edu.school.trim() || edu.degree.trim()), // Filter out empty entries
+                experience: experience.filter(exp => exp.jobTitle.trim() || exp.company.trim()), // Filter out empty entries
+            };
+
+            const jsonString = JSON.stringify(resumeData);
+            const qrCanvas = document.getElementById('qr-canvas');
+            const qrContainer = document.getElementById('qr-code-container');
+
+            // qrious expects a canvas element
+            const qr = new QRious({
+                element: qrCanvas,
+                value: jsonString,
+                size: 200, // Size of the QR code
+                level: 'H' // Error correction level (L, M, Q, H) - H is high
+            });
+
+            qrContainer.classList.remove('hidden');
+        }
+
+
+        // Event Listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initial update of the preview
+            updatePreview();
+
+            // Listen for input changes in the form to update preview
+            document.querySelectorAll('input, textarea').forEach(input => {
+                input.addEventListener('input', updatePreview);
+            });
+
+            // Listen for changes in the job description input
+            document.getElementById('job-description-input').addEventListener('input', calculateAtsScore);
+
+            // Add initial education and experience entry listeners
+            addRemoveEntryListeners();
+
+            // Add Education/Experience buttons
+            document.getElementById('add-education').addEventListener('click', addEducationEntry);
+            document.getElementById('add-experience').addEventListener('click', addExperienceEntry);
+
+            // PDF export button
+            document.getElementById('export-pdf').addEventListener('click', exportPdf);
+
+            // QR code generation button
+            document.getElementById('generate-qr').addEventListener('click', generateQrCode);
+        });
+
+        // Initialize with one empty education and experience entry
+        window.onload = function() {
+            addEducationEntry(); // Add one default education entry
+            addExperienceEntry(); // Add one default experience entry
+            updatePreview(); // Update preview after adding initial entries and calculate ATS score
+        };
+    </script>
+</body>
+</html>
+
